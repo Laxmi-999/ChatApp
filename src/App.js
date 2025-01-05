@@ -7,7 +7,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 
 
   const ProtectedRoute = ({ children, auth = false }) => {
-    const isLoggedIn = localStorage.getItem('user:token') !== null || false;
+    const isLoggedIn = localStorage.getItem('user:token') !== null ||false;
     console.log(` loggged in status : ${isLoggedIn}`)
 
     if (!isLoggedIn && auth) {
