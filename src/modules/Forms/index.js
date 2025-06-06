@@ -17,6 +17,8 @@ const Form = ({ isSingInPage = true }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        console.log('Data being sent:', data); // Log the data being sent
+
         try {
             const res = await fetch(`http://localhost:8000/api/${isSingInPage ? 'login' : 'register'}`, {
                 method: 'POST',
@@ -52,7 +54,7 @@ const Form = ({ isSingInPage = true }) => {
                 alert('Something went wrong. Please try again.');
             }
         } catch (error) {
-            console.error('Error during login:', error);
+            console.error('Error during login:', error.message);
             alert('An error occurred during login. Please try again.');
         }
     };
