@@ -165,48 +165,71 @@ const DashBoard = () => {
         }
     }, [loggedInUser, fetchUserConversations]);
 
-    useEffect(() => {
-        const currentUserId = loggedInUser?._id || loggedInUser?.id;
-        if (socket && currentUserId) {
-            socket.emit('addUser', currentUserId);
+   // ... (inside the useEffect where socket is initialized and listeners are set)
 
-            socket.on('getMessage', data => {
-                console.log('New message received from socket:', data);
+useEffect(() => {
+    const currentUserId = loggedInUser?._id || loggedInUser?.id;
+    if (socket && currentUserId) {
+        socket.emit('addUser', currentUserId);
 
-                setCurrentChatInfo(prevChatInfo => {
-                    const isMessageForCurrentConversation =
-                        prevChatInfo.receiver &&
-                        (
-                            (data.senderId === prevChatInfo.receiver.receiverId && data.receiverId === currentUserId) ||
-                            (data.receiverId === prevChatInfo.receiver.receiverId && data.senderId === currentUserId)
-                        ) &&
-                        (prevChatInfo.conversationId === data.conversationId);
+        socket.on('getMessage', data => {
+            console.log('New message received from socket:', data);
 
-                    console.log(`Is message for current conversation? ${isMessageForCurrentConversation}`);
+            // THE KEY CHANGE to resolve the double rendering issue IS HERE 
+            // If the received message's senderId matches the current logged-in user's ID,
+            // it means this message originated from THIS client, and we've already
+            // optimistically added it to the state. So, we ignore it to prevent duplicates.
+            if (data.senderId === currentUserId) {
+                console.log('Ignoring self-sent message from socket to prevent duplicate display.');
+                return; // Exit early, do not process this message for the sender's own display
+            }
 
-                    if (isMessageForCurrentConversation) {
-                        setMessages(prevMsgs => {
-                            const isDuplicate = prevMsgs.some(
-                                m => m.message === data.message && m.user.id === data.user.id && m.createdAt === data.createdAt
-                            );
-                            if (!isDuplicate) {
-                                return [...prevMsgs, { user: data.user, message: data.message }];
-                            }
-                            return prevMsgs;
-                        });
-                        return prevChatInfo;
-                    } else {
-                        fetchUserConversations();
-                        return prevChatInfo;
-                    }
-                });
+
+            setCurrentChatInfo(prevChatInfo => {
+                const isMessageForCurrentConversation =
+                    prevChatInfo.receiver &&
+                    (
+                        (data.senderId === prevChatInfo.receiver.receiverId && data.receiverId === currentUserId) ||
+                        (data.receiverId === prevChatInfo.receiver.receiverId && data.senderId === currentUserId)
+                    ) &&
+                    (prevChatInfo.conversationId === data.conversationId);
+
+                console.log(`Is message for current conversation? ${isMessageForCurrentConversation}`);
+
+                if (isMessageForCurrentConversation) {
+                    setMessages(prevMsgs => {
+                        // The previous duplicate check based on message/user/createdAt
+                        // might still be useful for other scenarios (e.g., if a message
+                        // is re-broadcast due to network weirdness), but the primary
+                        // duplicate from self-sending is handled above.
+                        // You can simplify or keep this based on how your backend sends data.
+                        const isDuplicate = prevMsgs.some(
+                            m => m.message === data.message && m.user?.id === data.user?.id && m.createdAt === data.createdAt
+                        );
+                        if (!isDuplicate) {
+                            return [...prevMsgs, { user: data.user, message: data.message, createdAt: data.createdAt || new Date().toISOString() }];
+                        }
+                        return prevMsgs;
+                    });
+                    return prevChatInfo;
+                } else {
+                    // This part is crucial for showing new conversations/unread counts
+                    // for messages from *other* users that are not currently selected.
+                    fetchUserConversations();
+                    return prevChatInfo;
+                }
             });
+        });
 
-            return () => {
-                socket.off('getMessage');
-            };
-        }
-    }, [socket, loggedInUser, fetchUserConversations]);
+        return () => {
+            socket.off('getMessage');
+        };
+    }
+}, [socket, loggedInUser, fetchUserConversations]); // Dependencies look correct
+
+
+
+
 
     useEffect(() => {
         messageRef?.current?.scrollIntoView({ behavior: 'smooth' });
