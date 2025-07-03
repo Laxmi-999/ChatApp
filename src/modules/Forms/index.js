@@ -29,36 +29,44 @@ const Form = ({ isSingInPage = true }) => {
             });
 
             if (res.status === 400) {
-                alert('Invalid credentials');
+                alert('Invalid credentials'); // This handles 400 from backend for both login/register
+                return;
+            }
+            // Check for 500 error specifically on the frontend
+            if (res.status === 500) {
+                const errorData = await res.json(); // Attempt to parse error message
+                alert(errorData.error || 'A server error occurred. Please try again.');
                 return;
             }
 
+
             const resData = await res.json();
-           console.log('login details', resData);
+            console.log('login details', resData); // This is misleading name, it's 'response data'
+
             // Check if the response contains the token and user details
             if (resData.token && resData.User) {
                 const userDetails = {
-                    id: resData.User.id, // Ensure we have a user ID
+                    id: resData.User.id,
                     email: resData.User.email,
                     fullName: resData.User.fullName,
                 };
 
-                // Save user details and token to localStorage
                 localStorage.setItem('user:token', resData.token);
                 localStorage.setItem('user:details', JSON.stringify(userDetails));
 
                 console.log('Login successful! Redirecting...');
-                navigate('/'); // Redirect to the homepage after login
+                navigate('/');
             } else {
+                // This else block is where your "Login response is missing necessary fields" comes from.
                 console.error('Login response is missing necessary fields:', resData);
                 alert('Something went wrong. Please try again.');
             }
         } catch (error) {
-            console.error('Error during login:', error.message);
-            alert('An error occurred during login. Please try again.');
+            console.error('Error during login/registration fetch:', error.message); // Changed log message
+            alert('An error occurred. Please check your network and try again.');
         }
     };
-
+    
     return (
         <>
             <div className="text-yellow bg-white h-[800px] w-[600px] shadow-lg rounded-lg items-center flex flex-col justify-center">
