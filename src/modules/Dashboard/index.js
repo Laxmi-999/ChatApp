@@ -26,21 +26,25 @@ const DashBoard = () => {
         }
     }, []);
 
-    useEffect(() => {
-        const newSocket = io('http://localhost:8080');
-        setSocket(newSocket);
+        useEffect(() => {
+            const newSocket = io('https://chat-server-vi4d.onrender.com', {
+                transports: ['websocket'],
+                withCredentials: true
+            });
+            setSocket(newSocket);
 
-        return () => {
-            newSocket.disconnect();
-        };
-    }, []);
+            return () => {
+                newSocket.disconnect();
+            };
+        }, []);
+
 
     const fetchAllUsers = useCallback(async () => {
         if (!loggedInUser) return;
 
         try {
             console.log('Fetching all users...');
-            const res = await fetch('http://localhost:8000/api/users', {
+            const res = await fetch('https://chat-server-vi4d.onrender.com/api/users', {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
             });
@@ -76,11 +80,10 @@ const DashBoard = () => {
 
         try {
             console.log(`Fetching conversations for user ID: ${userId}`);
-            const res = await fetch(`http://localhost:8000/api/conversation/${userId}`, {
+           const res = await fetch(`https://chat-server-vi4d.onrender.com/api/conversation/${userId}`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
-            });
-
+                });
             if (!res.ok) {
                 const errorText = await res.text();
                 throw new Error(`Error fetching conversation: ${res.status} ${res.statusText} - ${errorText}`);
@@ -117,9 +120,9 @@ const DashBoard = () => {
 
         let url = '';
         if (selectedConversationId === 'new') {
-            url = `http://localhost:8000/api/conversation?senderId=${loggedInUser.id}&receiverId=${userDetails.receiverId}`;
+            url = `https://chat-server-vi4d.onrender.com/api/conversation?senderId=${loggedInUser.id}&receiverId=${userDetails.receiverId}`;
         } else {
-            url = `http://localhost:8000/api/message/${selectedConversationId}`;
+            url = `https://chat-server-vi4d.onrender.com/api/message/${selectedConversationId}`;
         }
 
         try {
@@ -139,7 +142,7 @@ const DashBoard = () => {
             if (selectedConversationId === 'new') {
                 if (resData.conversationId) {
                     setCurrentChatInfo(prev => ({ ...prev, conversationId: resData.conversationId }));
-                    const messagesRes = await fetch(`http://localhost:8000/api/message/${resData.conversationId}`);
+                    const messagesRes = await fetch(`https://chat-server-vi4d.onrender.com/api/message/${resData.conversationId}`);
                     if (messagesRes.ok) {
                         const messagesData = await messagesRes.json();
                         setMessages(messagesData);
@@ -234,7 +237,7 @@ const DashBoard = () => {
         console.log('Sending message payload to API:', payload);
 
         try {
-            const res = await fetch(`http://localhost:8000/api/message`, {
+            const res = await fetch(`https://chat-server-vi4d.onrender.com/api/message`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)

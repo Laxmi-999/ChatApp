@@ -20,7 +20,7 @@ const Form = ({ isSingInPage = true }) => {
         console.log('Data being sent:', data); // Log the data being sent
 
         try {
-            const res = await fetch(`http://localhost:8000/api/${isSingInPage ? 'login' : 'register'}`, {
+            const res = await fetch(`https://chat-server-vi4d.onrender.com/api/${isSingInPage ? 'login' : 'register'}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
