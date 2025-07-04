@@ -17,7 +17,7 @@ const Form = ({ isSingInPage = true }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        console.log('Data being sent:', data); // Log the data being sent
+        console.log('Data being sent:', data);
 
         try {
             const res = await fetch(`https://chat-server-vi4d.onrender.com/api/${isSingInPage ? 'login' : 'register'}`, {
@@ -29,21 +29,33 @@ const Form = ({ isSingInPage = true }) => {
             });
 
             if (res.status === 400) {
-                alert('Invalid credentials'); // This handles 400 from backend for both login/register
+                alert('Invalid credentials');
                 return;
             }
-            // Check for 500 error specifically on the frontend
             if (res.status === 500) {
-                const errorData = await res.json(); // Attempt to parse error message
+                const errorData = await res.json();
                 alert(errorData.error || 'A server error occurred. Please try again.');
                 return;
             }
 
-
             const resData = await res.json();
-            console.log('login details', resData); // This is misleading name, it's 'response data'
+            console.log('Response data:', resData); // Renamed for clarity
 
-            // Check if the response contains the token and user details
+            // --- START OF MODIFICATION ---
+            if (!isSingInPage) { // This block specifically for the registration page
+                if (res.ok) { // Check if the response status is in the 2xx range (success)
+                    alert('Registered successfully! Please sign in.'); // Show success alert
+                    navigate('/users/sign_in'); // Navigate to the sign-in page
+                } else {
+                    // Handle registration-specific errors if any, though 400/500 are caught above
+                    console.error('Registration failed:', resData);
+                    alert(resData.message || 'Registration failed. Please try again.');
+                }
+                return; // Important: exit after handling registration
+            }
+            // --- END OF MODIFICATION ---
+
+            // Existing logic for sign-in page
             if (resData.token && resData.User) {
                 const userDetails = {
                     id: resData.User.id,
@@ -57,12 +69,11 @@ const Form = ({ isSingInPage = true }) => {
                 console.log('Login successful! Redirecting...');
                 navigate('/');
             } else {
-                // This else block is where your "Login response is missing necessary fields" comes from.
                 console.error('Login response is missing necessary fields:', resData);
                 alert('Something went wrong. Please try again.');
             }
         } catch (error) {
-            console.error('Error during login/registration fetch:', error.message); // Changed log message
+            console.error('Error during login/registration fetch:', error.message);
             alert('An error occurred. Please check your network and try again.');
         }
     };
