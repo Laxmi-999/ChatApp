@@ -120,8 +120,7 @@ const DashBoard = () => {
 
         let url = '';
         if (selectedConversationId === 'new') {
-            url = `https://chat-server-vi4d.onrender.com/api/conversation?senderId=${loggedInUser.id}&receiverId=${userDetails.receiverId}`;
-        } else {
+            url = `https://chat-server-vi4d.onrender.com/api/conversation/check?senderId=${loggedInUser.id}&receiverId=${userDetails.receiverId}`;        } else {
             url = `https://chat-server-vi4d.onrender.com/api/message/${selectedConversationId}`;
         }
 
