@@ -152,6 +152,11 @@ const DashBoard = () => {
             console.log("Logged-in user details missing for fetching messages.");
             return;
         }
+        if (!userDetails?.receiverId || !userDetails?.fullName) {
+            console.error("Invalid userDetails:", userDetails);
+            return;
+        }
+        setIsIconSidebarOpen(false); // Close sidebar on mobile
         setCurrentChatInfo({ receiver: userDetails, conversationId: selectedConversationId });
         setMessages([]);
         console.log(`Fetching messages for conversation ID: ${selectedConversationId} with receiver:`, userDetails);
@@ -180,6 +185,7 @@ const DashBoard = () => {
                         const messagesData = await messagesRes.json();
                         setMessages(messagesData);
                     } else {
+                        console.error('Failed to fetch messages for new conversation:', await messagesRes.text());
                         setMessages([]);
                     }
                     fetchUserConversations();
@@ -190,6 +196,7 @@ const DashBoard = () => {
             } else if (Array.isArray(resData)) {
                 setMessages(resData);
             } else {
+                console.warn("Unexpected API response format:", resData);
                 setMessages([]);
             }
         } catch (error) {
@@ -321,7 +328,7 @@ const DashBoard = () => {
                 </div>
             </div>
 
-            <div className="hidden lg:flex lg:w-1/4 w-full bg-gray-900 p-4 flex-col lg:mr-4">
+            <div className={`lg:flex lg:w-1/4 w-full bg-gray-900 p-4 flex-col lg:mr-4 ${currentChatInfo.receiver ? 'hidden' : 'block'} lg:block`}>
                 <div className="flex items-center mb-4">
                     <div className="border-2 border-indigo-500 rounded-full p-1 relative">
                         <img src={Avatar} className="rounded-full w-12 h-12 sm:w-14 sm:h-14" alt="User Avatar" />
@@ -391,11 +398,28 @@ const DashBoard = () => {
                 </div>
             </div>
 
-            {/* Chat Area */}
-            <div className="flex-1 flex flex-col bg-gray-800">
+            <div className={`flex-1 flex flex-col bg-gray-800 w-full ${currentChatInfo.receiver ? 'block' : 'hidden lg:block'}`}>
                 {currentChatInfo.receiver ? (
                     <>
                         <div className="w-full bg-gray-900 p-4 flex items-center">
+                            <button
+                                className="lg:hidden mr-2 p-2 bg-gray-700 rounded-lg"
+                                onClick={() => {
+                                    setCurrentChatInfo({ receiver: null, conversationId: null });
+                                    setMessages([]);
+                                    setIsIconSidebarOpen(true);
+                                }}
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-6 w-6 text-yellow-300"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </button>
                             <div className="relative">
                                 <img
                                     src={currentChatInfo.receiver.avatar || Avatar}
@@ -445,15 +469,15 @@ const DashBoard = () => {
                                 backgroundSize: 'cover',
                                 backgroundPosition: 'center',
                                 backgroundRepeat: 'no-repeat',
-                                WebkitOverflowScrolling: 'touch', // Smooth scrolling on touch devices
-                                scrollbarWidth: 'none', // Firefox
-                                msOverflowStyle: 'none', // IE and Edge
+                                WebkitOverflowScrolling: 'touch',
+                                scrollbarWidth: 'none',
+                                msOverflowStyle: 'none',
                             }}
                         >
                             <style>
                                 {`
                                     div[style*="maxHeight: calc(100vh - 128px)"]::-webkit-scrollbar {
-                                        display: none; /* Chrome, Safari, Edge */
+                                        display: none;
                                     }
                                 `}
                             </style>
@@ -547,7 +571,7 @@ const DashBoard = () => {
                 )}
             </div>
 
-            <div className="lg:w-1/4 w-full bg-gray-900 p-4 flex flex-col">
+            <div className={`lg:w-1/4 w-full bg-gray-900 p-4 flex flex-col ${currentChatInfo.receiver ? 'hidden' : 'block'} lg:block`}>
                 <h2 className="text-lg font-semibold mb-3 text-yellow-300">Users</h2>
                 <div className="flex-grow overflow-y-auto">
                     {users.length > 0 ? (
@@ -555,7 +579,10 @@ const DashBoard = () => {
                             <div
                                 key={user.id}
                                 className="flex items-center p-3 mb-2 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors duration-200"
-                                onClick={() => fetchMessages("new", { receiverId: user.id, fullName: user.fullName, email: user.email, avatar: user.avatar })}
+                                onClick={() => {
+                                    console.log('User clicked:', user);
+                                    fetchMessages("new", { receiverId: user.id, fullName: user.fullName, email: user.email, avatar: user.avatar });
+                                }}
                             >
                                 <div className="relative">
                                     <img src={Avatar} className="rounded-full w-10 h-10 sm:w-12 sm:h-12" alt="User Avatar" />
